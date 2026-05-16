@@ -1,0 +1,30 @@
+<div class="about-container">
+  <div class="header">
+    <div class="logo">Job Finder AI</div>
+    <div class="nav-links">
+      <a routerLink="/about">About</a>
+      <a routerLink="/contact">Contact</a>
+    </div>
+  </div>
+
+  <div class="content">
+    <h1>About Us</h1>
+    <p>
+      Welcome to Job Finder AI! Our mission is to connect talented individuals
+      with the best opportunities using advanced AI technology. Meet our team
+      below.
+    </p>
+
+    <div class="team-section">
+      <div class="team-card" *ngFor="let member of teamMembers">
+        <h3>{{ member.name }}</h3>
+        <p>{{ member.role }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="floating-elements">
+    <div class="circle"></div>
+    <div class="circle"></div>
+  </div>
+</div>

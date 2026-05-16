@@ -1,0 +1,55 @@
+<div class="jobs-container">
+  <div class="header">
+    <div class="logo">Job Finder AI</div>
+    <div class="nav-links">
+      <a routerLink="/about">About</a>
+      <a routerLink="/contact">Contact</a>
+    </div>
+  </div>
+
+  <div class="carousel">
+    <button class="nav-button prev" (click)="navigate('prev')" [disabled]="currentIndex === 0">
+      &lt;
+    </button>
+    <div class="card-container">
+      <div *ngIf="currentJob" class="job-card">
+        <h2>{{ currentJob.title }}</h2>
+        <div class="job-details">
+          <p><strong>Company:</strong> <span>{{ currentJob.company }}</span></p>
+          <p><strong>Location:</strong> <span>{{ currentJob.location }}</span></p>
+          <p><strong>Posted:</strong> <span>{{ currentJob.postedAt || 'N/A' }}</span></p>
+          <p>
+            <strong>Work From Home:</strong>
+            <span [ngStyle]="{ color: currentJob.workFromHome ? '#16a085' : '#e74c3c' }">
+              {{ currentJob.workFromHome ? 'Yes' : 'No' }}
+            </span>
+          </p>
+        </div>
+        <div class="apply-section">
+          <a [href]="currentJob.applyLink" target="_blank" class="apply-btn">
+            Apply Now
+          </a>
+        </div>
+      </div>
+      <div *ngIf="jobs.length === 0" class="no-jobs">
+        <p>No jobs found. Please upload a resume.</p>
+      </div>
+    </div>
+    <button class="nav-button next" (click)="navigate('next')" [disabled]="currentIndex === jobs.length - 1">
+      &gt;
+    </button>
+    <div class="dots-container">
+      <div
+        *ngFor="let job of jobs; let i = index"
+        class="dot"
+        [ngClass]="{ active: isDotActive(i) }"
+        (click)="goToJob(i)"
+      ></div>
+    </div>
+  </div>
+
+  <div class="floating-elements">
+    <div class="circle"></div>
+    <div class="circle"></div>
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<div class="upload-container-wrapper">
+  <div class="header">
+    <div class="logo">Job Finder AI</div>
+    <div class="nav-links">
+      <a routerLink="/about">About</a>
+      <a routerLink="/contact">Contact</a>
+    </div>
+  </div>
+
+  <div class="upload-container">
+    <h1>Upload Your Resume</h1>
+    <form (ngSubmit)="onFileSubmit($event)">
+      <div class="mb-3">
+        <label for="pdfFile" class="form-label">Choose PDF File</label>
+        <input
+          type="file"
+          class="form-control"
+          id="pdfFile"
+          accept="application/pdf"
+          required
+        />
+      </div>
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Processing...' : 'Find Jobs' }}
+      </button>
+      <div class="loading-spinner" *ngIf="loading">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="floating-elements">
+    <div class="circle"></div>
+    <div class="circle"></div>
+  </div>
+</div>

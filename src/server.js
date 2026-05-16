@@ -16,11 +16,15 @@ let extractedResumeText = ""; // Global variable for full resume text
 
 // Middleware
 app.use(express.json());
-app.use(express.static("public")); // Serve static files from the "public" directory
+app.use(express.static("frontend/dist/frontend/browser")); // Serve Angular build
 
-// Serve the upload page by default
-app.get("/", (req, res) => {
-  res.sendFile(path.resolve("public"));
+// Serve index.html for all routes to support Angular routing
+app.get("*", (req, res) => {
+  // Skip API routes
+  if (req.path.startsWith("/upload-pdf") || req.path.startsWith("/find-jobs")) {
+    return;
+  }
+  res.sendFile(path.resolve("frontend/dist/frontend/browser/index.html"));
 });
 
 // Endpoint to upload PDF and extract text
@@ -63,11 +67,6 @@ app.post("/find-jobs", async (req, res) => {
     console.error("Error finding jobs:", error.message);
     res.status(500).json({ error: "Failed to fetch jobs" });
   }
-});
-
-// Serve the jobs page
-app.get("/jobs", (req, res) => {
-  res.sendFile(path.resolve("public/jobs.html"));
 });
 
 // Start the server
