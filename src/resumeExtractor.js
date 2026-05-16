@@ -1,14 +1,6 @@
-import dotenv from "dotenv";
 import { ChatOpenAI } from "@langchain/openai";
 import { z } from "zod";
-
-dotenv.config();
-
-const model = new ChatOpenAI({
-  model: "gpt-4",
-  temperature: 0,
-  openAIApiKey: process.env.OPENAI_API_KEY,
-});
+import "./loadEnv.js";
 
 const resumeSchema = z.object({
   title: z.string().describe("Current job title of the candidate"),
@@ -19,7 +11,72 @@ const resumeSchema = z.object({
   degree: z.boolean().describe("Does the candidate have a degree?"),
 });
 
-const structuredLlm = model.withStructuredOutput(resumeSchema);
+function createStructuredLlm() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+
+  const modelName = process.env.OPENAI_MODEL || "gpt-4";
+  const model = new ChatOpenAI({
+    model: modelName,
+    temperature: 0,
+    openAIApiKey: apiKey,
+  });
+
+  return model.withStructuredOutput(resumeSchema);
+}
+
+let structuredLlm = null;
+
+function guessTitle(text) {
+  const haystack = String(text || "").toLowerCase();
+  const candidates = [
+    "software engineer",
+    "frontend developer",
+    "backend developer",
+    "full stack developer",
+    "web developer",
+    "mobile developer",
+    "data analyst",
+    "data scientist",
+    "devops engineer",
+    "qa engineer",
+    "product manager",
+    "ui/ux designer",
+    "graphic designer",
+  ];
+
+  for (const c of candidates) {
+    if (haystack.includes(c)) return c.replace(/\b\w/g, (m) => m.toUpperCase());
+  }
+
+  return "Software Engineer";
+}
+
+function guessDegree(text) {
+  const haystack = String(text || "").toLowerCase();
+  return (
+    haystack.includes("bachelor") ||
+    haystack.includes("bs ") ||
+    haystack.includes("b.s") ||
+    haystack.includes("bsc") ||
+    haystack.includes("master") ||
+    haystack.includes("ms ") ||
+    haystack.includes("m.s") ||
+    haystack.includes("msc") ||
+    haystack.includes("phd") ||
+    haystack.includes("doctorate")
+  );
+}
+
+export function basicExtractResumeDetails(extractedText) {
+  return {
+    title: guessTitle(extractedText),
+    location: (process.env.DEFAULT_JOB_LOCATION || "").trim(),
+    workFromHomePreference: false,
+    degree: guessDegree(extractedText),
+    _source: "basic",
+  };
+}
 
 /**
  * Extract structured details from resume text.
@@ -29,11 +86,36 @@ const structuredLlm = model.withStructuredOutput(resumeSchema);
  */
 export async function extractResumeDetails(extractedText) {
   try {
+    const textSnippet = String(extractedText || "").slice(0, 12000);
+
+    if (process.env.DISABLE_RESUME_EXTRACTION_LLM === "true") {
+      return basicExtractResumeDetails(textSnippet);
+    }
+
+    if (!structuredLlm) {
+      structuredLlm = createStructuredLlm();
+    }
+
+    if (!structuredLlm) {
+      throw new Error("OPENAI_API_KEY is missing; cannot extract resume details.");
+    }
+
     const structuredData = await structuredLlm.invoke(
-      `Extract the following details from the resume text: ${extractedText}`
+      `Extract the following details from the resume text: ${textSnippet}`
     );
-    console.log("Extracted Data: ", structuredData)
-    return structuredData;
+
+    const normalized = {
+      title: typeof structuredData?.title === "string" && structuredData.title.trim()
+        ? structuredData.title.trim()
+        : guessTitle(textSnippet),
+      location: typeof structuredData?.location === "string" ? structuredData.location.trim() : "",
+      workFromHomePreference: Boolean(structuredData?.workFromHomePreference),
+      degree: Boolean(structuredData?.degree),
+      _source: "llm",
+    };
+
+    console.log("Extracted Data: ", normalized);
+    return normalized;
   } catch (error) {
     console.error("Error extracting resume details:", error);
     throw error;

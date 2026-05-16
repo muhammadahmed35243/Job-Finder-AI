@@ -36,14 +36,18 @@ export class UploadComponent {
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to process the PDF.');
+        const details = await uploadResponse.text().catch(() => '');
+        throw new Error(details ? `Failed to process the PDF: ${details}` : 'Failed to process the PDF.');
       }
 
       const uploadResult = await uploadResponse.json();
 
       const jobsResponse = await fetch('/find-jobs', { method: 'POST' });
       if (!jobsResponse.ok) {
-        throw new Error('Failed to fetch job recommendations.');
+        const details = await jobsResponse.text().catch(() => '');
+        throw new Error(
+          details ? `Failed to fetch job recommendations: ${details}` : 'Failed to fetch job recommendations.'
+        );
       }
 
       const jobsResult = await jobsResponse.json();

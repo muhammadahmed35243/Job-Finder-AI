@@ -91,10 +91,13 @@
   cursor: pointer;
   transition: all 0.4s;
   box-shadow: 0 10px 20px rgba(0, 120, 255, 0.4);
+  min-width: 170px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .upload-container button:hover:not(:disabled) {
-  transform: scale(1.1);
   box-shadow: 0 15px 30px rgba(0, 120, 255, 0.6);
 }
 
@@ -107,6 +110,12 @@
   display: flex;
   justify-content: center;
   margin-top: 20px;
+  min-height: 24px; /* reserve space to prevent layout shift when loading starts */
+  visibility: hidden;
+}
+
+.upload-container .loading-spinner.visible {
+  visibility: visible;
 }
 
 .floating-elements {

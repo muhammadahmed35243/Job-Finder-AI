@@ -1,12 +1,10 @@
 import express from "express";
 import multer from "multer";
-import dotenv from "dotenv";
 import path from "path";
+import "./loadEnv.js";
 import { parsePDF } from "./processPDF.js";
-import { extractResumeDetails } from "./resumeExtractor.js";
+import { basicExtractResumeDetails, extractResumeDetails } from "./resumeExtractor.js";
 import { searchJobs } from "./jobSearch.js";
-
-dotenv.config();
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -18,15 +16,6 @@ let extractedResumeText = ""; // Global variable for full resume text
 app.use(express.json());
 app.use(express.static("frontend/dist/frontend/browser")); // Serve Angular build
 
-// Serve index.html for all routes to support Angular routing
-app.get("*", (req, res) => {
-  // Skip API routes
-  if (req.path.startsWith("/upload-pdf") || req.path.startsWith("/find-jobs")) {
-    return;
-  }
-  res.sendFile(path.resolve("frontend/dist/frontend/browser/index.html"));
-});
-
 // Endpoint to upload PDF and extract text
 app.post("/upload-pdf", upload.single("file"), async (req, res) => {
   try {
@@ -35,11 +24,20 @@ app.post("/upload-pdf", upload.single("file"), async (req, res) => {
     }
 
     extractedResumeText = await parsePDF(req.file.path); // Save extracted text globally
-    structuredResumeData = await extractResumeDetails(extractedResumeText);
+
+    let warning = null;
+    try {
+      structuredResumeData = await extractResumeDetails(extractedResumeText);
+    } catch (err) {
+      warning =
+        err instanceof Error ? err.message : "Failed to extract structured resume details.";
+      structuredResumeData = basicExtractResumeDetails(extractedResumeText);
+    }
 
     res.json({
       message: "PDF uploaded and structured data extracted successfully",
       data: structuredResumeData,
+      warning,
     });
   } catch (error) {
     console.error("Error processing PDF:", error.message);
@@ -67,6 +65,11 @@ app.post("/find-jobs", async (req, res) => {
     console.error("Error finding jobs:", error.message);
     res.status(500).json({ error: "Failed to fetch jobs" });
   }
+});
+
+// Serve index.html for all other routes to support Angular routing
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve("frontend/dist/frontend/browser/index.html"));
 });
 
 // Start the server

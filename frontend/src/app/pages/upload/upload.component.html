@@ -9,7 +9,7 @@
 
   <div class="upload-container">
     <h1>Upload Your Resume</h1>
-    <form (ngSubmit)="onFileSubmit($event)">
+    <form (submit)="onFileSubmit($event)">
       <div class="mb-3">
         <label for="pdfFile" class="form-label">Choose PDF File</label>
         <input
@@ -23,7 +23,7 @@
       <button type="submit" [disabled]="loading">
         {{ loading ? 'Processing...' : 'Find Jobs' }}
       </button>
-      <div class="loading-spinner" *ngIf="loading">
+      <div class="loading-spinner" [class.visible]="loading">
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
