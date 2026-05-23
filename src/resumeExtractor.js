@@ -12,10 +12,10 @@ const resumeSchema = z.object({
 });
 
 function createStructuredLlm() {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = (process.env.OPENAI_API_KEY || "").trim();
   if (!apiKey) return null;
 
-  const modelName = process.env.OPENAI_MODEL || "gpt-4";
+  const modelName = process.env.OPENAI_MODEL || "gpt-4o-mini";
   const model = new ChatOpenAI({
     model: modelName,
     temperature: 0,
@@ -26,6 +26,7 @@ function createStructuredLlm() {
 }
 
 let structuredLlm = null;
+let llmDisabled = false;
 
 function guessTitle(text) {
   const haystack = String(text || "").toLowerCase();
@@ -92,6 +93,10 @@ export async function extractResumeDetails(extractedText) {
       return basicExtractResumeDetails(textSnippet);
     }
 
+    if (llmDisabled) {
+      return basicExtractResumeDetails(textSnippet);
+    }
+
     if (!structuredLlm) {
       structuredLlm = createStructuredLlm();
     }
@@ -117,6 +122,17 @@ export async function extractResumeDetails(extractedText) {
     console.log("Extracted Data: ", normalized);
     return normalized;
   } catch (error) {
+    const status = error?.status ?? error?.response?.status;
+    const code = error?.code ?? error?.error?.code;
+
+    if (status === 401 || code === "invalid_api_key" || error?.lc_error_code === "MODEL_AUTHENTICATION") {
+      llmDisabled = true;
+      console.error(
+        "Resume LLM extraction disabled due to authentication error (check OPENAI_API_KEY). Using basic extraction."
+      );
+      return basicExtractResumeDetails(extractedText);
+    }
+
     console.error("Error extracting resume details:", error);
     throw error;
   }

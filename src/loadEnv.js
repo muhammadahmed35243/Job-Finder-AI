@@ -6,5 +6,21 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+dotenv.config({
+  path: path.resolve(__dirname, "../.env"),
+  // If you have OPENAI_API_KEY set in your system/user env vars, it can "win" over `.env`.
+  // Override ensures the `.env` value is actually used.
+  override: true,
+});
 
+process.env.DOTENV_LOADED = "true";
+
+function normalizeSecret(value) {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  // Handle accidental quoting: OPENAI_API_KEY="sk-..."
+  return trimmed.replace(/^['"]|['"]$/g, "");
+}
+
+process.env.OPENAI_API_KEY = normalizeSecret(process.env.OPENAI_API_KEY);
+process.env.SERPAPI_API_KEY = normalizeSecret(process.env.SERPAPI_API_KEY);

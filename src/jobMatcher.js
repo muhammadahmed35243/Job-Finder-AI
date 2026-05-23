@@ -15,10 +15,10 @@ function normalizeScore(rawScore) {
 }
 
 function createStructuredLlm() {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = (process.env.OPENAI_API_KEY || "").trim();
   if (!apiKey) return null;
 
-  const modelName = process.env.OPENAI_MODEL || "gpt-4";
+  const modelName = process.env.OPENAI_MODEL || "gpt-4o-mini";
   const model = new ChatOpenAI({
     model: modelName,
     temperature: 0,
@@ -29,6 +29,7 @@ function createStructuredLlm() {
 }
 
 let structuredLlm = null;
+let llmDisabled = false;
 
 /**
  * Calculate the match score between the resume and job details.
@@ -40,6 +41,10 @@ let structuredLlm = null;
 export async function calculateMatchScore(resumeText, jobDetails) {
   try {
     if (process.env.DISABLE_LLM_MATCHING === "true") {
+      return 0;
+    }
+
+    if (llmDisabled) {
       return 0;
     }
 
@@ -70,6 +75,19 @@ export async function calculateMatchScore(resumeText, jobDetails) {
     console.log("Calculated Match Score:", normalized);
     return normalized;
   } catch (error) {
+    const status = error?.status ?? error?.response?.status;
+    const code = error?.code ?? error?.error?.code;
+
+    // If the OpenAI key is invalid/unauthorized, disable LLM matching for the rest of this process
+    // and fall back to basic scoring upstream.
+    if (status === 401 || code === "invalid_api_key" || error?.lc_error_code === "MODEL_AUTHENTICATION") {
+      llmDisabled = true;
+      console.error(
+        "LLM match scoring disabled due to authentication error (check OPENAI_API_KEY)."
+      );
+      return 0;
+    }
+
     console.error("Error calculating match score:", error);
     throw error;
   }

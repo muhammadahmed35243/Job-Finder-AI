@@ -41,7 +41,7 @@ export async function searchJobs({
   try {
     const apiKey = process.env.SERPAPI_API_KEY;
 
-    if (!apiKey) {
+    if (!apiKey || !String(apiKey).trim()) {
       throw new Error("API key is missing. Set SERPAPI_API_KEY in your .env file.");
     }
 
