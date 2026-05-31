@@ -20,7 +20,6 @@ RUN npm install --production --silent || npm install --silent
 
 # Copy server source
 COPY src/ ./src/
-COPY loadEnv.js ./
 
 # Copy other top-level files that server may need
 
